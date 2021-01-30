@@ -2,7 +2,7 @@ package process
 
 import "golang.org/x/sys/windows"
 
-type TOKEN_STATISTICS struct {
+type tokenStatistics struct {
 	TokenId            windows.LUID
 	AuthenticationId   windows.LUID
 	ExpirationTime     uint64

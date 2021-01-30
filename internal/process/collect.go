@@ -1,6 +1,9 @@
+// +build windows
+
 package process
 
 import (
+	"gotest/winapi"
 	"syscall"
 	"unsafe"
 
@@ -34,13 +37,13 @@ func Collect() (*[]Info, error) {
 			inf.PPID = entry.ParentProcessID
 
 			// Getting LUID for logon session user
-			var data TOKEN_STATISTICS
+			var data tokenStatistics
 			err = hdlr.getTokenInfo(uint32(syscall.TokenStatistics), &data)
 			if err != nil {
 				hdlr.close()
 				return nil, errors.Wrap(err, "get token statistics")
 			}
-			inf.User.AuthenticationId = data.AuthenticationId
+			inf.User.AuthenticationID = data.AuthenticationId
 
 			// Getting owner's Name, Domain and SID
 			tUser, err := hdlr.token.GetTokenUser()
@@ -56,6 +59,16 @@ func Collect() (*[]Info, error) {
 				hdlr.close()
 				return nil, errors.Wrap(err, "lookup user Name and domain Name by SID")
 			}
+
+			// Getting LSA Logon info
+			var sessionData *winapi.SecurityLogonSessionData
+			err = winapi.LsaGetLogonSessionData(&inf.User.AuthenticationID, &sessionData)
+			if err != nil {
+				hdlr.close()
+				return nil, errors.Wrap(err, "get logon session data")
+			}
+			inf.User.LastSuccessLogon, _ = winapi.WinToUnixTime(sessionData.LogonTime)
+			inf.User.SessionID = sessionData.Session
 
 			// Save data and close descriptors
 			hdlr.close()

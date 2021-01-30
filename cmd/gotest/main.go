@@ -1,6 +1,6 @@
-package main
-
 // +build windows
+
+package main
 
 import (
 	"fmt"
@@ -14,7 +14,6 @@ type stackTracer interface {
 }
 
 func main() {
-
 	pinfo, err := process.Collect()
 	for _, info := range *pinfo {
 		info.Show()
