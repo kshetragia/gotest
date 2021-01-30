@@ -33,17 +33,33 @@ func Collect() (*[]Info, error) {
 			inf.PID = entry.ProcessID
 			inf.PPID = entry.ParentProcessID
 
+			// Getting LUID for logon session user
 			var data TOKEN_STATISTICS
 			err = hdlr.getTokenInfo(uint32(syscall.TokenStatistics), &data)
 			if err != nil {
 				hdlr.close()
 				return nil, errors.Wrap(err, "get token statistics")
 			}
-
 			inf.User.AuthenticationId = data.AuthenticationId
 
+			// Getting owner's Name, Domain and SID
+			tUser, err := hdlr.token.GetTokenUser()
+			if err != nil {
+				hdlr.close()
+				return nil, errors.Wrap(err, "get token user")
+			}
+			SID := tUser.User.Sid
+
+			inf.User.SID = SID.String()
+			inf.User.Name, inf.User.Domain, _, err = SID.LookupAccount("")
+			if err != nil {
+				hdlr.close()
+				return nil, errors.Wrap(err, "lookup user Name and domain Name by SID")
+			}
+
+			// Save data and close descriptors
 			hdlr.close()
-			inf.Show()
+			pinfo = append(pinfo, inf)
 		}
 
 		if err := windows.Process32Next(snapshot, &entry); err != nil {
@@ -56,20 +72,3 @@ func Collect() (*[]Info, error) {
 
 	return &pinfo, nil
 }
-
-/*
-	tokenUser, err := token.GetTokenUser()
-	if err != nil {
-		errors.Wrap(err, "get token user")
-		return err
-	}
-
-	sid := tokenUser.User.Sid
-	p.SID = sid.String()
-
-	p.Owner, p.Domain, _, err = sid.LookupAccount(hostname)
-	if err != nil {
-		errors.Wrap(err, "lookup SID process owner")
-		return err
-	}
-*/

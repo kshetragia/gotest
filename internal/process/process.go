@@ -11,7 +11,7 @@ type User struct {
 	Domain           string
 	AuthenticationId windows.LUID
 	SessionId        string
-	SID              windows.SID
+	SID              string
 }
 
 type Info struct {
@@ -23,14 +23,11 @@ type Info struct {
 	Rusage
 }
 
-func Test() error {
-	return nil
-}
-
 func (info *Info) Show() {
 	e := info
 	user := "\\\\" + e.User.Domain + "\\" + e.User.Name
 	fmt.Printf("[%v] %v \n", e.PID, e.Name)
 	fmt.Printf("\tUser: %v\n", user)
+	fmt.Printf("\tSID: %v\n", e.User.SID)
 	fmt.Printf("\tLUID: %v\n", e.User.AuthenticationId)
 }
