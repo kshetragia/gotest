@@ -33,6 +33,7 @@ func (info *Info) Show() {
 	e := info
 	user := "\\\\" + e.User.Domain + "\\" + e.User.Name
 	fmt.Printf("[%v] %v \n", e.PID, e.Name)
+	fmt.Printf("\tPath: %v\n", e.Path)
 	fmt.Printf("\tExecution time: %v (%v running)\n", e.StartTime.String(), e.Running.String())
 	fmt.Printf("\tUser: %v\n", user)
 	fmt.Printf("\t  SessionId: %v\n", e.User.SessionID)

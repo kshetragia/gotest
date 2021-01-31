@@ -39,9 +39,15 @@ func Collect() (*[]Info, error) {
 		var inf Info
 		err = hdlr.open(entry.ProcessID, flags)
 		if err == nil {
+			// Collect common always accessible process information
 			inf.Name = windows.UTF16ToString(entry.ExeFile[:])
 			inf.PID = entry.ProcessID
 			inf.PPID = entry.ParentProcessID
+
+			inf.Path, err = getProcessPath(entry.ProcessID)
+			if err != nil {
+				return collectClose(&hdlr, err, "get process execution path")
+			}
 
 			// Getting LUID for logon session user
 			var data tokenStatistics
@@ -93,4 +99,22 @@ func Collect() (*[]Info, error) {
 	}
 
 	return &pinfo, nil
+}
+
+// getProcessPath is working with process modules structures list.
+// It can be reworked to get all modules information for the specified process.
+func getProcessPath(pid uint32) (string, error) {
+	snap, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPMODULE, pid)
+	if err != nil {
+		return "", errors.Wrap(err, "modules list snapshot")
+	}
+	defer windows.CloseHandle(snap)
+
+	entry := winapi.ModuleEntry32{}
+	entry.Size = uint32(unsafe.Sizeof(entry))
+	if err = winapi.Module32First(snap, &entry); err != nil {
+		return "", errors.Wrap(err, "first process module entry")
+	}
+
+	return windows.UTF16ToString(entry.ExePath[:]), nil
 }
