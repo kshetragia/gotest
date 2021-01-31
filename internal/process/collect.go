@@ -76,13 +76,19 @@ func Collect() (*[]Info, error) {
 			if err != nil {
 				return collectClose(&hdlr, err, "get logon session data")
 			}
-			inf.User.LastSuccessLogon, _ = winapi.WinToUnixTime(sessionData.LogonTime)
+			inf.User.LastSuccessLogon = winapi.WinToUnixTime(sessionData.LogonTime)
 			inf.User.SessionID = sessionData.Session
 
 			// Getting CPU usage info
-			inf.StartTime, inf.Running, err = hdlr.cpuInfo()
+			inf.StartTime, inf.Running, inf.CPU.Kernel, inf.CPU.User, err = hdlr.cpuInfo()
 			if err != nil {
 				return collectClose(&hdlr, err, "get CPU usage info")
+			}
+
+			// Getting Memory usage
+			inf.MemoryUsage, err = hdlr.memInfo()
+			if err != nil {
+				return collectClose(&hdlr, err, "get memory usage info")
 			}
 
 			// Save data and close descriptors
