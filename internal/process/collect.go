@@ -11,11 +11,18 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+func collectClose(hdlr *prochdlr, err error, errstr string) (*[]Info, error) {
+	if hdlr != nil {
+		hdlr.close()
+	}
+	return nil, errors.Wrap(err, errstr)
+}
+
 func Collect() (*[]Info, error) {
 	var pinfo []Info
 	snapshot, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
 	if err != nil {
-		return nil, errors.Wrap(err, "take process list snapshot")
+		return collectClose(nil, err, "take process list snapshot")
 	}
 	defer windows.CloseHandle(snapshot)
 
@@ -40,35 +47,37 @@ func Collect() (*[]Info, error) {
 			var data tokenStatistics
 			err = hdlr.getTokenInfo(uint32(syscall.TokenStatistics), &data)
 			if err != nil {
-				hdlr.close()
-				return nil, errors.Wrap(err, "get token statistics")
+				return collectClose(&hdlr, err, "get token statistics")
 			}
 			inf.User.AuthenticationID = data.AuthenticationId
 
 			// Getting owner's Name, Domain and SID
 			tUser, err := hdlr.token.GetTokenUser()
 			if err != nil {
-				hdlr.close()
-				return nil, errors.Wrap(err, "get token user")
+				return collectClose(&hdlr, err, "get token user")
 			}
 			SID := tUser.User.Sid
 
 			inf.User.SID = SID.String()
 			inf.User.Name, inf.User.Domain, _, err = SID.LookupAccount("")
 			if err != nil {
-				hdlr.close()
-				return nil, errors.Wrap(err, "lookup user Name and domain Name by SID")
+				return collectClose(&hdlr, err, "lookup user Name and Domain name by SID")
 			}
 
 			// Getting LSA Logon info
 			var sessionData *winapi.SecurityLogonSessionData
 			err = winapi.LsaGetLogonSessionData(&inf.User.AuthenticationID, &sessionData)
 			if err != nil {
-				hdlr.close()
-				return nil, errors.Wrap(err, "get logon session data")
+				return collectClose(&hdlr, err, "get logon session data")
 			}
 			inf.User.LastSuccessLogon, _ = winapi.WinToUnixTime(sessionData.LogonTime)
 			inf.User.SessionID = sessionData.Session
+
+			// Getting CPU usage info
+			inf.StartTime, inf.Running, err = hdlr.cpuInfo()
+			if err != nil {
+				return collectClose(&hdlr, err, "get CPU usage info")
+			}
 
 			// Save data and close descriptors
 			hdlr.close()
@@ -79,7 +88,7 @@ func Collect() (*[]Info, error) {
 			if err == windows.ERROR_NO_MORE_FILES {
 				break
 			}
-			return nil, errors.Wrap(err, "take next process entry from process list")
+			return collectClose(nil, err, "take next process entry from process list")
 		}
 	}
 
