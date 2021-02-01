@@ -2,7 +2,11 @@
 
 package winapi
 
-import "golang.org/x/sys/windows"
+import (
+	"unsafe"
+
+	"golang.org/x/sys/windows"
+)
 
 // Get Logon session data
 // See also:
@@ -48,4 +52,11 @@ type SecurityLogonSessionData struct {
 	PasswordLastSet       uint64
 	PasswordCanChange     uint64
 	PasswordMustChange    uint64
+}
+
+func LsaUnicodeToString(str LsaUnicodeString) string {
+	if str.Buffer == 0 || str.Length == 0 {
+		return ""
+	}
+	return windows.UTF16ToString((*[4096]uint16)(unsafe.Pointer(str.Buffer))[:str.Length])
 }
