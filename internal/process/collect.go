@@ -80,7 +80,7 @@ func Collect() (*[]Info, error) {
 			inf.User.SessionID = sessionData.Session
 
 			// Getting CPU usage info
-			inf.StartTime, inf.Running, inf.CPU.Kernel, inf.CPU.User, err = hdlr.cpuInfo()
+			inf.StartTime, inf.CPUTime, err = hdlr.cpuInfo()
 			if err != nil {
 				return collectClose(&hdlr, err, "get CPU usage info")
 			}

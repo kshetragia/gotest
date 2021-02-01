@@ -7,19 +7,29 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-func (hdlr *prochdlr) cpuInfo() (*time.Time, *time.Duration, float64, float64, error) {
+// cpuInfo is using windows GetProcessTimes() function to get CPU process time
+// See also: https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes
+func (hdlr *prochdlr) cpuInfo() (string, CPUTime, error) {
 	var createTime, exitTime, kernelTime, userTime windows.Filetime
+	var cpu CPUTime
 
 	if err := windows.GetProcessTimes(hdlr.handler, &createTime, &exitTime, &kernelTime, &userTime); err != nil {
-		return nil, nil, 0, 0, errors.Wrap(err, "get process times")
+		return "", cpu, errors.Wrap(err, "get process times")
 	}
 
 	now := time.Now()
 	create := time.Unix(0, createTime.Nanoseconds())
-	running := now.Sub(create)
 
-	user := float64(userTime.HighDateTime)*429.4967296 + float64(userTime.LowDateTime)*1e-7
-	kernel := float64(kernelTime.HighDateTime)*429.4967296 + float64(kernelTime.LowDateTime)*1e-7
+	// Total CPU time
+	total := now.Sub(create)
 
-	return &create, &running, kernel, user, nil
+	// The Filetime structure has two uint32 parts of uint64 time number ticked by 100ns intervals
+	// So we should do the follow to get real time from time chunks:
+	//     time(seconds) = (high << 32 + low) * 1e-9 * 100
+	cpu.User = float64(uint64(userTime.HighDateTime)<<32+uint64(userTime.LowDateTime)) * 1e-7
+	cpu.Kernel = float64(uint64(kernelTime.HighDateTime)<<32+uint64(kernelTime.LowDateTime)) * 1e-7
+	cpu.System = (cpu.User + cpu.Kernel) * 100 / total.Seconds()
+	cpu.Total = total.Round(time.Millisecond).String()
+
+	return create.String(), cpu, nil
 }
