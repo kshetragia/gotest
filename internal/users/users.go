@@ -76,6 +76,6 @@ func (u Users) Key(luid *windows.LUID) (int64, error) {
 	if luid == nil {
 		return 0, errors.New("got empty LUID pointer")
 	}
-	key := int64((luid.HighPart << 32) + int32(luid.LowPart))
+	key := int64(int64(luid.HighPart<<32) + int64(luid.LowPart))
 	return key, nil
 }

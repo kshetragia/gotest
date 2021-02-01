@@ -3,6 +3,7 @@
 package process
 
 import (
+	"fmt"
 	"gotest/winapi"
 	"syscall"
 	"unsafe"
@@ -11,18 +12,12 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-func collectClose(hdlr *prochdlr, err error, errstr string) (*[]Info, error) {
-	if hdlr != nil {
-		hdlr.close()
-	}
-	return nil, errors.Wrap(err, errstr)
-}
-
-func Collect() (*[]Info, error) {
-	var pinfo []Info
+// Collect gathers all executed processes info and returns process list
+// It intentionaly cleanup process list and create new one.
+func (plist *List) Collect() error {
 	snapshot, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
 	if err != nil {
-		return collectClose(nil, err, "take process list snapshot")
+		return errors.Wrap(err, "take process list snapshot")
 	}
 	defer windows.CloseHandle(snapshot)
 
@@ -30,86 +25,83 @@ func Collect() (*[]Info, error) {
 	entry.Size = uint32(unsafe.Sizeof(entry))
 
 	if err = windows.Process32First(snapshot, &entry); err != nil {
-		return nil, errors.Wrap(err, "take first process entry from process list")
+		return errors.Wrap(err, "take first process entry from process list")
 	}
 
-	const flags = windows.PROCESS_QUERY_INFORMATION
-	var hdlr prochdlr
 	for {
-		var inf Info
-		err = hdlr.open(entry.ProcessID, flags)
-		if err == nil {
-			// Collect common always accessible process information
-			inf.Name = windows.UTF16ToString(entry.ExeFile[:])
-			inf.PID = entry.ProcessID
-			inf.PPID = entry.ParentProcessID
-
-			inf.Path, err = getProcessPath(entry.ProcessID)
-			if err != nil {
-				return collectClose(&hdlr, err, "get process execution path")
-			}
-
-			// Getting LUID for logon session user
-			var data tokenStatistics
-			err = hdlr.getTokenInfo(uint32(syscall.TokenStatistics), &data)
-			if err != nil {
-				return collectClose(&hdlr, err, "get token statistics")
-			}
-			inf.User.AuthenticationID = data.AuthenticationId
-
-			// Getting owner's Name, Domain and SID
-			tUser, err := hdlr.token.GetTokenUser()
-			if err != nil {
-				return collectClose(&hdlr, err, "get token user")
-			}
-			SID := tUser.User.Sid
-
-			inf.User.SID = SID.String()
-			inf.User.Name, inf.User.Domain, _, err = SID.LookupAccount("")
-			if err != nil {
-				return collectClose(&hdlr, err, "lookup user Name and Domain name by SID")
-			}
-
-			// Getting LSA Logon info
-			var sessionData *winapi.SecurityLogonSessionData
-			err = winapi.LsaGetLogonSessionData(&inf.User.AuthenticationID, &sessionData)
-			if err != nil {
-				return collectClose(&hdlr, err, "get logon session data")
-			}
-			inf.User.LastSuccessLogon = winapi.WinToUnixTime(sessionData.LogonTime)
-			inf.User.SessionID = sessionData.Session
-
-			// Getting CPU usage info
-			inf.StartTime, inf.CPUTime, err = hdlr.cpuInfo()
-			if err != nil {
-				return collectClose(&hdlr, err, "get CPU usage info")
-			}
-
-			// Getting Memory usage
-			inf.MemoryUsage, err = hdlr.memInfo()
-			if err != nil {
-				return collectClose(&hdlr, err, "get memory usage info")
-			}
-
-			// Save data and close descriptors
-			hdlr.close()
-			pinfo = append(pinfo, inf)
+		var inf Process
+		if err := inf.collect(&entry); err != nil {
+			// Temporary ignore errors
+			// Just show it on display
+			// fmt.Printf("collect process info: %v", err)
+		} else {
+			plist.Add(&inf)
 		}
 
 		if err := windows.Process32Next(snapshot, &entry); err != nil {
 			if err == windows.ERROR_NO_MORE_FILES {
 				break
 			}
-			return collectClose(nil, err, "take next process entry from process list")
+			return errors.Wrap(err, "take next process entry from process list")
 		}
 	}
 
-	return &pinfo, nil
+	return nil
 }
 
-// getProcessPath is working with process modules structures list.
+func (p *Process) collect(entry *windows.ProcessEntry32) error {
+	var err error
+
+	// Open process tokens.
+	var hdlr prochdlr
+	err = hdlr.open(entry.ProcessID, windows.PROCESS_QUERY_INFORMATION)
+	if err != nil {
+		return fmt.Errorf("[%v(%v)] open process: %v", p.Name, p.PID, err)
+	}
+
+	// Collect common always accessible process information
+	p.Name = windows.UTF16ToString(entry.ExeFile[:])
+	p.PID = entry.ProcessID
+	p.PPID = entry.ParentProcessID
+
+	p.Path, err = processPath(entry.ProcessID)
+	if err != nil {
+		hdlr.close()
+		return fmt.Errorf("[%v(%v)] get process execution path: %v", p.Name, p.PID, err)
+	}
+
+	// Getting LUID for logon session user
+	var data tokenStatistics
+	err = hdlr.getTokenInfo(uint32(syscall.TokenStatistics), &data)
+	if err != nil {
+		hdlr.close()
+		return fmt.Errorf("[%v(%v)] get token statistics: %v", p.Name, p.PID, err)
+	}
+	p.UserKey = &data.AuthenticationId
+
+	// Getting CPU usage info
+	p.StartTime, p.CPUTime, err = hdlr.cpuInfo()
+	if err != nil {
+		hdlr.close()
+		return fmt.Errorf("[%v(%v)] get CPU usage info: %v", p.Name, p.PID, err)
+	}
+
+	// Getting Memory usage
+	p.MemoryUsage, err = hdlr.memInfo()
+	if err != nil {
+		hdlr.close()
+		return fmt.Errorf("[%v(%v)] get memory usage info: %v", p.Name, p.PID, err)
+	}
+
+	// Save data and close descriptors
+	hdlr.close()
+
+	return nil
+}
+
+// processPath is working with process modules structures list.
 // It can be reworked to get all modules information for the specified process.
-func getProcessPath(pid uint32) (string, error) {
+func processPath(pid uint32) (string, error) {
 	snap, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPMODULE, pid)
 	if err != nil {
 		return "", errors.Wrap(err, "modules list snapshot")

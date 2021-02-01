@@ -7,6 +7,13 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+type CPUTime struct {
+	Kernel float64
+	User   float64
+	System float64
+	Total  string
+}
+
 // cpuInfo is using windows GetProcessTimes() function to get CPU process time
 // See also: https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes
 func (hdlr *prochdlr) cpuInfo() (string, CPUTime, error) {

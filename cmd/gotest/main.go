@@ -1,10 +1,8 @@
-// +build windows
-
 package main
 
 import (
 	"fmt"
-	"gotest/process"
+	"gotest/info"
 
 	"github.com/pkg/errors"
 )
@@ -14,10 +12,7 @@ type stackTracer interface {
 }
 
 func main() {
-	pinfo, err := process.Collect()
-	for _, info := range *pinfo {
-		info.Show()
-	}
+	pinfo, err := info.Collect()
 	if err != nil {
 		for e := err; e != nil; e = errors.Unwrap(err) {
 			fmt.Println("Error:", e)
@@ -27,6 +22,6 @@ func main() {
 				fmt.Printf("%+s: %d\n", f, f)
 			}
 		}
-
 	}
+	pinfo.Show()
 }
