@@ -9,15 +9,30 @@ import (
 	"github.com/pkg/errors"
 )
 
+// MemoryInfo collects memory statistics about process
+type MemoryInfo struct {
+	WorkingSetSize         uintptr
+	QuotaPagedPoolUsage    uintptr
+	QuotaNonPagedPoolUsage uintptr
+	PrivateUsage           uintptr
+}
+
 // memInfo returns the total amount of private memory
 // that the memory manager has committed for a running process.
-func (hdlr *prochdlr) memInfo() (uint64, error) {
+func (hdlr *prochdlr) memInfo() (*MemoryInfo, error) {
 	counters := winapi.ProcessMemoryCountersEx{}
 	size := uint32(unsafe.Sizeof(counters))
 	err := winapi.GetProcessMemoryInfo(hdlr.handler, &counters, size)
 	if err != nil {
-		return 0, errors.Wrap(err, "get process memory info")
+		return nil, errors.Wrap(err, "get process memory info")
 	}
 
-	return uint64(counters.PrivateUsage), nil
+	minfo := MemoryInfo{
+		WorkingSetSize:         counters.WorkingSetSize,
+		QuotaPagedPoolUsage:    counters.QuotaPagedPoolUsage,
+		QuotaNonPagedPoolUsage: counters.QuotaNonPagedPoolUsage,
+		PrivateUsage:           counters.PrivateUsage,
+	}
+
+	return &minfo, nil
 }

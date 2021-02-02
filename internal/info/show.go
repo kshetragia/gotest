@@ -28,7 +28,12 @@ func (info *Info) Show() {
 		fmt.Printf("\t  System: %.2f%%\n", e.CPUTime.System)
 		fmt.Printf("\t  Total:  %v\n", e.CPUTime.Total)
 
-		fmt.Printf("\tRAM: %.3f Mb [%v]\n", float64(e.MemoryUsage)/1024/1024, e.MemoryUsage)
+		fmt.Printf("\tMemory:\n")
+		fmt.Printf("\t  WorkingSetSize: %v\n", e.MemoryInfo.WorkingSetSize)
+		fmt.Printf("\t  QuotaPagedPoolUsage: %v\n", e.MemoryInfo.QuotaPagedPoolUsage)
+		fmt.Printf("\t  QuotaNonPagedPoolUsage: %v\n", e.MemoryInfo.QuotaNonPagedPoolUsage)
+		fmt.Printf("\t  PrivateUsage: %v\n", e.MemoryInfo.PrivateUsage)
+
 		// fmt.Printf("\tLUID: %v\n", e.User.AuthenticationID)
 		fmt.Println()
 	}

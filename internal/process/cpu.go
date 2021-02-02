@@ -16,12 +16,12 @@ type CPUTime struct {
 
 // cpuInfo is using windows GetProcessTimes() function to get CPU process time
 // See also: https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes
-func (hdlr *prochdlr) cpuInfo() (string, CPUTime, error) {
+func (hdlr *prochdlr) cpuInfo() (string, *CPUTime, error) {
 	var createTime, exitTime, kernelTime, userTime windows.Filetime
 	var cpu CPUTime
 
 	if err := windows.GetProcessTimes(hdlr.handler, &createTime, &exitTime, &kernelTime, &userTime); err != nil {
-		return "", cpu, errors.Wrap(err, "get process times")
+		return "", nil, errors.Wrap(err, "get process times")
 	}
 
 	now := time.Now()
@@ -38,5 +38,5 @@ func (hdlr *prochdlr) cpuInfo() (string, CPUTime, error) {
 	cpu.System = (cpu.User + cpu.Kernel) * 100 / total.Seconds()
 	cpu.Total = total.Round(time.Millisecond).String()
 
-	return create.String(), cpu, nil
+	return create.String(), &cpu, nil
 }

@@ -8,13 +8,13 @@ import (
 
 // Process takes information about one executed process
 type Process struct {
-	CPUTime // struct of cpu usage statistics
+	CPUTime    *CPUTime
+	MemoryInfo *MemoryInfo
 
-	Name        string
-	Path        string
-	PID         uint32
-	PPID        uint32
-	StartTime   string
-	UserKey     *windows.LUID
-	MemoryUsage uint64
+	Name      string
+	Path      string
+	PID       uint32
+	PPID      uint32
+	StartTime string
+	UserKey   *windows.LUID
 }

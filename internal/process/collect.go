@@ -3,7 +3,6 @@
 package process
 
 import (
-	"fmt"
 	"gotest/winapi"
 	"syscall"
 	"unsafe"
@@ -56,7 +55,7 @@ func (p *Process) collect(entry *windows.ProcessEntry32) error {
 	var hdlr prochdlr
 	err = hdlr.open(entry.ProcessID, windows.PROCESS_QUERY_INFORMATION)
 	if err != nil {
-		return fmt.Errorf("[%v(%v)] open process: %v", p.Name, p.PID, err)
+		return errors.Wrapf(err, "[%v(%v)] open process", p.Name, p.PID)
 	}
 
 	// Collect common always accessible process information
@@ -67,7 +66,7 @@ func (p *Process) collect(entry *windows.ProcessEntry32) error {
 	p.Path, err = processPath(entry.ProcessID)
 	if err != nil {
 		hdlr.close()
-		return fmt.Errorf("[%v(%v)] get process execution path: %v", p.Name, p.PID, err)
+		return errors.Wrapf(err, "[%v(%v)] get process execution path", p.Name, p.PID)
 	}
 
 	// Getting LUID for logon session user
@@ -75,7 +74,7 @@ func (p *Process) collect(entry *windows.ProcessEntry32) error {
 	err = hdlr.getTokenInfo(uint32(syscall.TokenStatistics), &data)
 	if err != nil {
 		hdlr.close()
-		return fmt.Errorf("[%v(%v)] get token statistics: %v", p.Name, p.PID, err)
+		return errors.Wrapf(err, "[%v(%v)] get token statistics", p.Name, p.PID)
 	}
 	p.UserKey = &data.AuthenticationId
 
@@ -83,14 +82,14 @@ func (p *Process) collect(entry *windows.ProcessEntry32) error {
 	p.StartTime, p.CPUTime, err = hdlr.cpuInfo()
 	if err != nil {
 		hdlr.close()
-		return fmt.Errorf("[%v(%v)] get CPU usage info: %v", p.Name, p.PID, err)
+		return errors.Wrapf(err, "[%v(%v)] get CPU usage info", p.Name, p.PID)
 	}
 
 	// Getting Memory usage
-	p.MemoryUsage, err = hdlr.memInfo()
+	p.MemoryInfo, err = hdlr.memInfo()
 	if err != nil {
 		hdlr.close()
-		return fmt.Errorf("[%v(%v)] get memory usage info: %v", p.Name, p.PID, err)
+		return errors.Wrapf(err, "[%v(%v)] get memory usage info", p.Name, p.PID)
 	}
 
 	// Save data and close descriptors
