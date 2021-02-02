@@ -49,14 +49,13 @@ func (plist *List) Collect() error {
 }
 
 func (p *Process) collect(entry *windows.ProcessEntry32) error {
-	var err error
-
 	// Open process tokens.
 	var hdlr prochdlr
-	err = hdlr.open(entry.ProcessID, windows.PROCESS_QUERY_INFORMATION)
+	err := hdlr.open(entry.ProcessID, windows.PROCESS_QUERY_INFORMATION)
 	if err != nil {
 		return errors.Wrapf(err, "[%v(%v)] open process", p.Name, p.PID)
 	}
+	defer hdlr.close()
 
 	// Collect common always accessible process information
 	p.Name = windows.UTF16ToString(entry.ExeFile[:])
@@ -65,7 +64,6 @@ func (p *Process) collect(entry *windows.ProcessEntry32) error {
 
 	p.Path, err = processPath(entry.ProcessID)
 	if err != nil {
-		hdlr.close()
 		return errors.Wrapf(err, "[%v(%v)] get process execution path", p.Name, p.PID)
 	}
 
@@ -73,7 +71,6 @@ func (p *Process) collect(entry *windows.ProcessEntry32) error {
 	var data tokenStatistics
 	err = hdlr.getTokenInfo(uint32(syscall.TokenStatistics), &data)
 	if err != nil {
-		hdlr.close()
 		return errors.Wrapf(err, "[%v(%v)] get token statistics", p.Name, p.PID)
 	}
 	p.UserKey = &data.AuthenticationId
@@ -81,19 +78,14 @@ func (p *Process) collect(entry *windows.ProcessEntry32) error {
 	// Getting CPU usage info
 	p.StartTime, p.CPUTime, err = hdlr.cpuInfo()
 	if err != nil {
-		hdlr.close()
 		return errors.Wrapf(err, "[%v(%v)] get CPU usage info", p.Name, p.PID)
 	}
 
 	// Getting Memory usage
 	p.MemoryInfo, err = hdlr.memInfo()
 	if err != nil {
-		hdlr.close()
 		return errors.Wrapf(err, "[%v(%v)] get memory usage info", p.Name, p.PID)
 	}
-
-	// Save data and close descriptors
-	hdlr.close()
 
 	return nil
 }
