@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"gotest/info"
+	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -24,6 +29,7 @@ func showErrors(err error) {
 }
 
 func Show(info *info.FullInfo) {
+	var count int
 	for _, e := range *info {
 		u := e.User
 		user := "\\\\" + u.Domain + "\\" + u.Name
@@ -50,22 +56,52 @@ func Show(info *info.FullInfo) {
 		fmt.Printf("\t  QuotaNonPagedPoolUsage: %v\n", e.MemoryInfo.QuotaNonPagedPoolUsage)
 		fmt.Printf("\t  PrivateUsage: %v\n", e.MemoryInfo.PrivateUsage)
 
-		// fmt.Printf("\tLUID: %v\n", e.User.AuthenticationID)
 		fmt.Println()
+		count++
 	}
-
+	fmt.Println("Count:", count)
 }
 
-func main() {
+func infoHandler(w http.ResponseWriter, req *http.Request) {
 	pinfo, err := info.Collect()
 	if err != nil {
 		showErrors(err)
+		return
 	}
-	Show(pinfo)
-
 	json, err := pinfo.Json()
 	if err != nil {
 		showErrors(err)
+		return
 	}
-	fmt.Println(string(json))
+	fmt.Fprintf(w, string(json))
+}
+
+func main() {
+	fmt.Println("Trying to raise up HTTP server...")
+
+	srv := &http.Server{Addr: ":8080"}
+	http.HandleFunc("/", infoHandler)
+
+	// Raise up HTTP server
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			fmt.Println("Server error:", err)
+		}
+	}()
+
+	fmt.Println("Server is running on *:8080")
+
+	// Wait SIGIING
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+	<-stop
+
+	fmt.Println("Shutting down HTTP server")
+
+	// Try to shutdown HTTP server
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		fmt.Println("Shutdown error:", err)
+	}
 }
