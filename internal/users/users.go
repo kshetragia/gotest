@@ -11,18 +11,18 @@ import (
 )
 
 type User struct {
-	Name             string
-	Domain           string
-	SID              string
-	SessionID        uint32
-	LastSuccessLogon string
-	AuthenticationID *windows.LUID
+	Name             string        `json:"Name"`
+	Domain           string        `json:"Domain"`
+	SID              string        `json:"SID"`
+	SessionID        uint32        `json:"SessionID"`
+	LastSuccessLogon string        `json:"LastSuccessLogon"`
+	AuthenticationID *windows.LUID `json:"LUID"`
 }
 
 type Users map[int64]User
 
-// New creates new Users map
-func New() Users {
+// Init creates new Users map
+func Init() Users {
 	return Users(make(map[int64]User))
 }
 

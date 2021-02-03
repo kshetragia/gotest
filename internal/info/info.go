@@ -5,8 +5,18 @@ import (
 	"gotest/users"
 )
 
-// Info consists all data about working proceses
+// FullInfo holds full unsorted process list Info
+type FullInfo []*Info
+
+// Info has complete data about a single process
 type Info struct {
-	Procs *process.List
-	Users *users.Users
+	Name      string `json:"Name"`
+	Path      string `json:"Path"`
+	PID       uint32 `json:PID`
+	PPID      uint32 `json:PPID`
+	StartTime string `json:"StartTime"`
+
+	User       *users.User         `json:"Owner"`
+	CPUTime    *process.CPUTime    `json:"CPU"`
+	MemoryInfo *process.MemoryInfo `json:"Memory"`
 }

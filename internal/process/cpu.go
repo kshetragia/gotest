@@ -8,10 +8,10 @@ import (
 )
 
 type CPUTime struct {
-	Kernel float64
-	User   float64
-	System float64
-	Total  string
+	Kernel float64 `json:"Kernel"`
+	User   float64 `json:"User"`
+	System float64 `json:"System"`
+	Total  string  `json:"Total"`
 }
 
 // cpuInfo is using windows GetProcessTimes() function to get CPU process time

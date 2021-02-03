@@ -11,10 +11,10 @@ import (
 
 // MemoryInfo collects memory statistics about process
 type MemoryInfo struct {
-	WorkingSetSize         uintptr
-	QuotaPagedPoolUsage    uintptr
-	QuotaNonPagedPoolUsage uintptr
-	PrivateUsage           uintptr
+	WorkingSetSize         uintptr `json:"WorkingSetSize"`
+	QuotaPagedPoolUsage    uintptr `json:"QuotaPagedPoolUsage"`
+	QuotaNonPagedPoolUsage uintptr `json:"QuotaNonPagedPoolUsage"`
+	PrivateUsage           uintptr `json:"PrivateUsage"`
 }
 
 // memInfo returns the total amount of private memory
