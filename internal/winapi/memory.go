@@ -13,7 +13,7 @@ var (
 	procGetProcessMemoryInfo = psapi.NewProc("GetProcessMemoryInfo")
 )
 
-// ProcessMemoryCounters is a copy of PROCESS_MEMORY_COUNTERS windows structure
+// ProcessMemoryCountersEx is a copy of PROCESS_MEMORY_COUNTERS windows structure
 // See also: https://docs.microsoft.com/en-us/windows/win32/api/psapi/ns-psapi-process_memory_counters
 type ProcessMemoryCountersEx struct {
 	Cb                         uint32  // DWORD

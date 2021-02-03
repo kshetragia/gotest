@@ -23,7 +23,7 @@ func LsaGetLogonSessionData(luid *windows.LUID, sessionData **SecurityLogonSessi
 	return LsaNtStatusToWinError(r0)
 }
 
-// LsaNtStatusToWinError
+// LsaNtStatusToWinError is returning status of Lsa* winapi functions
 func LsaNtStatusToWinError(status uintptr) error {
 	r0, _, errno := syscall.Syscall(procLsaNtStatusToWinError.Addr(), 1, status, 0, 0)
 	switch errno {

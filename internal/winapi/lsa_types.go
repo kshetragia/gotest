@@ -54,6 +54,7 @@ type SecurityLogonSessionData struct {
 	PasswordMustChange    uint64
 }
 
+// LsaUnicodeToString converts UCS-16 into UTF-8 string
 func LsaUnicodeToString(str LsaUnicodeString) string {
 	if str.Buffer == 0 || str.Length == 0 {
 		return ""
