@@ -1,5 +1,3 @@
-github.com/SherifEldeeb/win-netstat v0.0.0-20180710031115-efa1aff6aafc h1:/6QKIqr93NTHQOfo2jzViPMij+hphYkROxt4tdHV6X4=
-github.com/SherifEldeeb/win-netstat v0.0.0-20180710031115-efa1aff6aafc/go.mod h1:noBaIv79xmjBdC2MZwjV/Ouoosg6kFaRRsb71fWsTOQ=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pytimer/win-netstat v0.0.0-20180710031115-efa1aff6aafc h1:NJabarGmZw//DrC1ixmeUOZgmrGnbXL8/IN4CHOeckM=

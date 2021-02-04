@@ -2,6 +2,7 @@ package info
 
 import (
 	"gotest/process"
+	"gotest/procnet"
 	"gotest/users"
 
 	"github.com/pkg/errors"
@@ -14,6 +15,11 @@ func Collect() (*FullInfo, error) {
 	procs.Init()
 	if err := procs.Collect(); err != nil {
 		return nil, errors.Wrap(err, "collect process info")
+	}
+
+	netstat := procnet.Init()
+	if err := netstat.Collect(); err != nil {
+		return nil, errors.Wrap(err, "collect network IO stat")
 	}
 
 	var full FullInfo
@@ -39,6 +45,7 @@ func Collect() (*FullInfo, error) {
 			User:       user,
 			CPUTime:    elem.CPUTime,
 			MemoryInfo: elem.MemoryInfo,
+			NetInfo:    netstat[elem.PID],
 		}
 
 		full = append(full, &info)

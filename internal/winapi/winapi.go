@@ -11,4 +11,5 @@ var (
 	kernel32 = windows.NewLazySystemDLL("Kernel32.dll")
 	psapi    = windows.NewLazySystemDLL("Psapi.dll")
 	secur32  = windows.NewLazySystemDLL("Secur32.dll")
+	iphlpapi = windows.NewLazySystemDLL("Iphlpapi.dll")
 )

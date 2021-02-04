@@ -56,6 +56,16 @@ func Show(info *info.FullInfo) {
 		fmt.Printf("\t  QuotaNonPagedPoolUsage: %v\n", e.MemoryInfo.QuotaNonPagedPoolUsage)
 		fmt.Printf("\t  PrivateUsage: %v\n", e.MemoryInfo.PrivateUsage)
 
+		fmt.Printf("\tNetwork:\n")
+		for key, val := range e.NetInfo {
+			fmt.Printf("  [%v]: %v\n", key, val.Proto)
+			fmt.Printf("    State: %v\n", val.State)
+			fmt.Printf("    LocalAddr: %v:%v\n", val.LocalAddr, val.LocalPort)
+			fmt.Printf("    RemoteAddr: %v:%v\n", val.RemoteAddr, val.RemotePort)
+			fmt.Printf("    In: %v Bytes (%v Bytes/s)\n", val.IOStat.BytesIn, val.IOStat.BandIn)
+			fmt.Printf("    Out: %v Bytes (%v Bytes/s)\n", val.IOStat.BytesOut, val.IOStat.BandOut)
+		}
+
 		fmt.Println()
 		count++
 	}
@@ -74,6 +84,7 @@ func infoHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	fmt.Fprintf(w, string(json))
+	// Show(pinfo)
 }
 
 func main() {
