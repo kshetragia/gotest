@@ -1,29 +1,31 @@
-# README #
+## Тестовое задание
 
-This README would normally document whatever steps are necessary to get your application up and running.
+### Написать Go агента для Windows ###
 
-### What is this repository for? ###
+1. Агент должен уметь собирать информацию о процессах. Не использовать WMI по возможности):
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+    * Имя процесса
+    * Pid
+    * Путь к файлу
+    * Дата старта процесса.
+    * Номер сеанса в котором запущен процесс
+    * Имя пользователя сеанса
+    * Sid пользователя в сеансе
+    * Дата последнего логина в сеанс
+
+1. Загрузка этим процессом:
+
+    * Процессор
+    * Память
+    * Диск
+    * Сеть
+
+1. Данные вернуть в JSON формате по Get запросу.
 
 ### How do I get set up? ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
-
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
+* go build cmd\gotest\main.go
 
 ### Who do I talk to? ###
 
-* Repo owner or admin
-* Other community or team contact
+* Рубцов Алексей (kshetragia@gmail.com)
