@@ -25,6 +25,7 @@
 ### How do I get set up? ###
 
 * go build cmd\gotest\main.go
+* Execute as Administrator
 
 ### Who do I talk to? ###
 
