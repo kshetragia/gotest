@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"gotest/info"
+	"gotest/privilege"
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"time"
 
 	"github.com/pkg/errors"
@@ -73,21 +75,52 @@ func Show(info *info.FullInfo) {
 }
 
 func infoHandler(w http.ResponseWriter, req *http.Request) {
-	pinfo, err := info.Collect()
-	if err != nil {
-		showErrors(err)
-		return
-	}
+	// Impersonate to SYSTEM and get process list
+	c := make(chan *info.FullInfo)
+
+	go func(c chan *info.FullInfo) {
+		//		defer wg.Done()
+		defer close(c)
+
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
+
+		pid, err := privilege.GetWinlogonPid()
+		if err != nil {
+			showErrors(err)
+			return
+		}
+
+		privilege.Impersonate(pid)
+		defer privilege.RevertToSelf(true)
+
+		pinfo, err := info.Collect()
+		if err != nil {
+			showErrors(err)
+			return
+		}
+		c <- pinfo
+	}(c)
+
+	pinfo := <-c
+
 	json, err := pinfo.Json()
 	if err != nil {
 		showErrors(err)
 		return
 	}
 	fmt.Fprintf(w, string(json))
-	// Show(pinfo)
+
+	//Show(pinfo)
 }
 
 func main() {
+
+	if !privilege.IsAdmin() {
+		fmt.Println("Please Run this program as Administrator")
+		return
+	}
+
 	fmt.Println("Trying to raise up HTTP server...")
 
 	srv := &http.Server{Addr: ":8080"}

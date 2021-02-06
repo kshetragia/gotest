@@ -1,3 +1,4 @@
+bitbucket.org/kshetragia/gotest v0.0.0-20210205135804-9d3ea4f189f9 h1:PQl6CMv2Lj1rfDvF2Ow9JJnKoMjq2NCZkPJWqOLzCYE=
 github.com/SherifEldeeb/win-netstat v0.0.0-20180710031115-efa1aff6aafc h1:/6QKIqr93NTHQOfo2jzViPMij+hphYkROxt4tdHV6X4=
 github.com/SherifEldeeb/win-netstat v0.0.0-20180710031115-efa1aff6aafc/go.mod h1:noBaIv79xmjBdC2MZwjV/Ouoosg6kFaRRsb71fWsTOQ=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
