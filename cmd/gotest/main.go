@@ -118,9 +118,12 @@ func infoHandler(w http.ResponseWriter, req *http.Request) {
 
 func main() {
 
-	if !privilege.IsAdmin() {
-		fmt.Println("Please Run this program as Administrator")
-		return
+	privName := "SeImpersonatePrivilege"
+	if !privilege.IsEnabled(privName) {
+		if privilege.Set(privName, true) || !privilege.IsEnabled(privName) {
+			fmt.Printf("Unable to set '%v'.\n\nPlease Run this program as Administrator\n", privName)
+			return
+		}
 	}
 
 	fmt.Println("Trying to raise up HTTP server...")
