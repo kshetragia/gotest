@@ -79,21 +79,23 @@ func infoHandler(w http.ResponseWriter, req *http.Request) {
 	c := make(chan *info.FullInfo)
 
 	go func(c chan *info.FullInfo) {
-		//		defer wg.Done()
 		defer close(c)
 
+		// because of go has custom scheduler we must attach go thread
+		// to system thread to impersonate this goroutine with other access rights
 		runtime.LockOSThread()
 		defer runtime.UnlockOSThread()
 
-		pid, err := privilege.GetWinlogonPid()
+		// Get winlogon.exe process ID and steal access rights
+		pid, err := privilege.PidByName("winlogon.exe")
 		if err != nil {
 			showErrors(err)
 			return
 		}
-
 		privilege.Impersonate(pid)
 		defer privilege.RevertToSelf(true)
 
+		// Gathering info
 		pinfo, err := info.Collect()
 		if err != nil {
 			showErrors(err)

@@ -15,7 +15,6 @@ import (
 // Impersonate takes pid of process, steals process rights and use them for the current thread
 func Impersonate(pid uint32) (err error) {
 
-	// winlogon.exe pid
 	handler, err := windows.OpenProcess(windows.PROCESS_QUERY_LIMITED_INFORMATION, false, pid)
 	if err != nil {
 		fmt.Println(err, "open process handler")
@@ -64,7 +63,8 @@ func IsAdmin() bool {
 	return true
 }
 
-func GetWinlogonPid() (pid uint32, err error) {
+// PidByName returns process ID by process name
+func PidByName(needName string) (pid uint32, err error) {
 	snapshot, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
 	if err != nil {
 		return
@@ -80,14 +80,11 @@ func GetWinlogonPid() (pid uint32, err error) {
 
 	for {
 		name := windows.UTF16ToString(entry.ExeFile[:])
-		if name == "winlogon.exe" {
+		if name == needName {
 			pid = entry.ProcessID
 			return
 		}
 		if err = windows.Process32Next(snapshot, &entry); err != nil {
-			if err == windows.ERROR_NO_MORE_FILES {
-				break
-			}
 			return
 		}
 	}
